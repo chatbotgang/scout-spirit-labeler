@@ -1,0 +1,43 @@
+# Example workflow for Scout Spirit Labeler
+#
+# Copy this file to .github/workflows/scout-spirit.yml in your repository
+
+name: Scout Spirit ⚜️
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+# Prevent concurrent runs for the same PR
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  analyze-pr:
+    name: Analyze PR for Scout Spirit
+    runs-on: ubuntu-latest
+
+    # Skip if PR is already labeled or opened by a bot
+    if: |
+      !contains(github.event.pull_request.labels.*.name, 'Scout Spirit ⚜️') &&
+      github.event.pull_request.user.type == 'User'
+
+    permissions:
+      contents: read
+      pull-requests: write
+
+    steps:
+      - name: Scout Spirit Labeler
+        id: scout-spirit
+        uses: chatbotgang/scout-spirit-labeler@v1
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          openai_api_key: ${{ secrets.OPENAI_API_KEY }}
+          # Optional: customize settings
+          # model: gpt-5-mini
+          # confidence_threshold: 80
+          # label_name: 'Scout Spirit ⚜️'
+          # add_comment: true
+          # max_diff_size: 50000
+          # openai_base_url: https://api.openai.com/v1

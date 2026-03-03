@@ -1,0 +1,102 @@
+name: 'Scout Spirit Labeler'
+description: 'AI-powered GitHub Action that labels PRs exhibiting Scout Spirit ⚜️ — the Boy Scout Rule of leaving code cleaner than you found it'
+author: 'Scout Spirit Labeler Contributors'
+
+branding:
+  icon: 'award'
+  color: 'yellow'
+
+inputs:
+  github_token:
+    description: 'GitHub token for API access'
+    required: true
+  openai_api_key:
+    description: 'OpenAI API key (or compatible service)'
+    required: true
+  openai_base_url:
+    description: 'OpenAI API base URL (for Azure OpenAI or custom endpoints)'
+    required: false
+    default: 'https://api.openai.com/v1'
+  model:
+    description: 'AI model to use for analysis'
+    required: false
+    default: 'gpt-5-mini'
+  confidence_threshold:
+    description: 'Minimum confidence score to apply label (0-100)'
+    required: false
+    default: '80'
+  label_name:
+    description: 'Label name to apply when PR exhibits Scout Spirit'
+    required: false
+    default: 'Scout Spirit ⚜️'
+  max_diff_size:
+    description: 'Maximum diff size in characters before truncation'
+    required: false
+    default: '50000'
+  add_comment:
+    description: 'Whether to add an explanatory comment to the PR'
+    required: false
+    default: 'true'
+
+outputs:
+  eligible:
+    description: 'Whether the PR exhibits Scout Spirit'
+    value: ${{ steps.analyze.outputs.eligible }}
+  confidence:
+    description: 'AI confidence score (0-100)'
+    value: ${{ steps.analyze.outputs.confidence }}
+  category:
+    description: 'Detected Scout Spirit category or none'
+    value: ${{ steps.analyze.outputs.category }}
+  reasoning:
+    description: 'AI reasoning for the decision'
+    value: ${{ steps.analyze.outputs.reasoning }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+
+    - name: Install pnpm
+      uses: pnpm/action-setup@v4
+      with:
+        version: 9
+        run_install: false
+
+    - name: Install dependencies
+      shell: bash
+      working-directory: ${{ github.action_path }}
+      run: pnpm install --frozen-lockfile || pnpm install
+
+    - name: Run Scout Spirit analysis
+      id: analyze
+      shell: bash
+      working-directory: ${{ github.action_path }}
+      env:
+        GITHUB_TOKEN: ${{ inputs.github_token }}
+        OPENAI_API_KEY: ${{ inputs.openai_api_key }}
+        OPENAI_BASE_URL: ${{ inputs.openai_base_url }}
+        INPUT_MODEL: ${{ inputs.model }}
+        INPUT_CONFIDENCE_THRESHOLD: ${{ inputs.confidence_threshold }}
+        INPUT_LABEL_NAME: ${{ inputs.label_name }}
+        INPUT_MAX_DIFF_SIZE: ${{ inputs.max_diff_size }}
+        INPUT_ADD_COMMENT: ${{ inputs.add_comment }}
+        GITHUB_CONTEXT: ${{ toJson(github) }}
+      run: pnpm exec tsx src/index.ts
+
+    - name: Scout Spirit Analysis Summary
+      if: always()
+      shell: bash
+      run: |
+        echo "## Scout Spirit ⚜️ Analysis Results" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "| Field | Value |" >> $GITHUB_STEP_SUMMARY
+        echo "|-------|-------|" >> $GITHUB_STEP_SUMMARY
+        echo "| **PR** | #${{ github.event.pull_request.number }} |" >> $GITHUB_STEP_SUMMARY
+        echo "| **Scout Spirit** | ${{ steps.analyze.outputs.eligible }} |" >> $GITHUB_STEP_SUMMARY
+        echo "| **Confidence** | ${{ steps.analyze.outputs.confidence }}% |" >> $GITHUB_STEP_SUMMARY
+        echo "| **Category** | ${{ steps.analyze.outputs.category }} |" >> $GITHUB_STEP_SUMMARY
+        echo "| **Reasoning** | ${{ steps.analyze.outputs.reasoning }} |" >> $GITHUB_STEP_SUMMARY

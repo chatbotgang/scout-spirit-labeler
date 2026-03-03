@@ -1,0 +1,35 @@
+{
+  "name": "scout-spirit-labeler",
+  "private": true,
+  "version": "1.0.0",
+  "description": "AI-powered GitHub Action that labels PRs exhibiting Scout Spirit ⚜️ — the Boy Scout Rule of leaving code cleaner than you found it",
+  "type": "module",
+  "main": "src/index.ts",
+  "scripts": {
+    "start": "tsx src/index.ts",
+    "build": "tsc",
+    "typecheck": "tsc --noEmit"
+  },
+  "keywords": [
+    "github-action",
+    "code-review",
+    "ai",
+    "openai",
+    "pull-request",
+    "scout-spirit",
+    "boy-scout-rule",
+    "refactoring"
+  ],
+  "license": "Apache-2.0",
+  "dependencies": {
+    "@octokit/rest": "^21.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "tsx": "^4.7.0",
+    "typescript": "^5.3.0"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
