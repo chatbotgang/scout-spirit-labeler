@@ -33,11 +33,10 @@ jobs:
         uses: chatbotgang/scout-spirit-labeler@v1
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          openai_api_key: ${{ secrets.OPENAI_API_KEY }}
+          gemini_api_key: ${{ secrets.GEMINI_API_KEY }}
           # Optional: customize settings
-          # model: gpt-5-mini
+          # model: gemini-2.5-flash
           # confidence_threshold: 80
           # label_name: 'Scout Spirit ⚜️'
           # add_comment: true
           # max_diff_size: 50000
-          # openai_base_url: https://api.openai.com/v1
