@@ -10,17 +10,13 @@ inputs:
   github_token:
     description: 'GitHub token for API access'
     required: true
-  openai_api_key:
-    description: 'OpenAI API key (or compatible service)'
+  gemini_api_key:
+    description: 'Gemini API key'
     required: true
-  openai_base_url:
-    description: 'OpenAI API base URL (for Azure OpenAI or custom endpoints)'
-    required: false
-    default: 'https://api.openai.com/v1'
   model:
     description: 'AI model to use for analysis'
     required: false
-    default: 'gpt-5-mini'
+    default: 'gemini-2.5-flash'
   confidence_threshold:
     description: 'Minimum confidence score to apply label (0-100)'
     required: false
@@ -77,8 +73,7 @@ runs:
       working-directory: ${{ github.action_path }}
       env:
         GITHUB_TOKEN: ${{ inputs.github_token }}
-        OPENAI_API_KEY: ${{ inputs.openai_api_key }}
-        OPENAI_BASE_URL: ${{ inputs.openai_base_url }}
+        GEMINI_API_KEY: ${{ inputs.gemini_api_key }}
         INPUT_MODEL: ${{ inputs.model }}
         INPUT_CONFIDENCE_THRESHOLD: ${{ inputs.confidence_threshold }}
         INPUT_LABEL_NAME: ${{ inputs.label_name }}
