@@ -1,3 +1,4 @@
+import { GoogleGenAI } from "@google/genai";
 import { Octokit } from "@octokit/rest";
 import fs from "node:fs";
 import path from "node:path";
@@ -13,7 +14,6 @@ interface Config {
   labelName: string;
   maxDiffSize: number;
   addComment: boolean;
-  openaiBaseUrl: string;
 }
 
 interface FileInfo {
@@ -70,7 +70,7 @@ interface GitHubContext {
 
 function getConfig(): Config {
   return {
-    model: process.env.INPUT_MODEL || "gpt-5-mini",
+    model: process.env.INPUT_MODEL || "gemini-2.5-flash",
     confidenceThreshold: parseInt(
       process.env.INPUT_CONFIDENCE_THRESHOLD || "80",
       10,
@@ -78,7 +78,6 @@ function getConfig(): Config {
     labelName: process.env.INPUT_LABEL_NAME || "Scout Spirit ⚜️",
     maxDiffSize: parseInt(process.env.INPUT_MAX_DIFF_SIZE || "50000", 10),
     addComment: process.env.INPUT_ADD_COMMENT !== "false",
-    openaiBaseUrl: process.env.OPENAI_BASE_URL || "https://api.openai.com/v1",
   };
 }
 
@@ -190,41 +189,38 @@ ${diffData.diffContent}
 
 Provide your analysis in the specified JSON format.`;
 
-  const apiUrl = `${config.openaiBaseUrl}/chat/completions`;
-  const apiKey = process.env.OPENAI_API_KEY;
-
+  const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) {
-    throw new Error("OPENAI_API_KEY environment variable is not set");
+    throw new Error("GEMINI_API_KEY environment variable is not set");
   }
 
-  const response = await fetch(apiUrl, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${apiKey}`,
+  const ai = new GoogleGenAI({ apiKey });
+  const response = await ai.models.generateContent({
+    model: config.model,
+    contents: userPrompt,
+    config: {
+      systemInstruction: systemPrompt,
+      responseMimeType: "application/json",
+      responseJsonSchema: {
+        type: "object",
+        properties: {
+          eligible: { type: "boolean" },
+          category: {
+            oneOf: [
+              { type: "string" },
+              { type: "array", items: { type: "string" } },
+            ],
+          },
+          confidence: { type: "integer", minimum: 0, maximum: 100 },
+          reasoning: { type: "string" },
+          flags: { type: "array", items: { type: "string" } },
+        },
+        required: ["eligible", "category", "confidence", "reasoning"],
+      },
     },
-    body: JSON.stringify({
-      model: config.model,
-      messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: userPrompt },
-      ],
-      response_format: { type: "json_object" },
-    }),
   });
 
-  if (!response.ok) {
-    const errorBody = await response.text();
-    throw new Error(
-      `OpenAI API request failed (${response.status}): ${errorBody}`,
-    );
-  }
-
-  const data = (await response.json()) as {
-    choices: Array<{ message: { content: string } }>;
-  };
-  const content = data.choices?.[0]?.message?.content;
-
+  const content = response.text;
   if (!content) {
     throw new Error("No content in AI response");
   }
@@ -335,14 +331,14 @@ async function main(): Promise<void> {
 
   // Validate environment
   const githubToken = process.env.GITHUB_TOKEN;
-  const openaiApiKey = process.env.OPENAI_API_KEY;
+  const geminiApiKey = process.env.GEMINI_API_KEY;
   const githubContextJson = process.env.GITHUB_CONTEXT;
 
   if (!githubToken) {
     throw new Error("GITHUB_TOKEN is not set");
   }
-  if (!openaiApiKey) {
-    throw new Error("OPENAI_API_KEY is not set");
+  if (!geminiApiKey) {
+    throw new Error("GEMINI_API_KEY is not set");
   }
   if (!githubContextJson) {
     throw new Error("GITHUB_CONTEXT is not set");

@@ -14,7 +14,7 @@
     "github-action",
     "code-review",
     "ai",
-    "openai",
+    "gemini",
     "pull-request",
     "scout-spirit",
     "boy-scout-rule",
@@ -22,6 +22,7 @@
   ],
   "license": "Apache-2.0",
   "dependencies": {
+    "@google/genai": "^1.44.0",
     "@octokit/rest": "^21.0.0"
   },
   "devDependencies": {
