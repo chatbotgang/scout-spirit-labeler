@@ -24,7 +24,7 @@ Before analyzing the diff in detail, check the PR title for conventional commit 
 - `refactor:` or `refactor(` — Code restructuring. Almost always Scout Spirit.
 - `perf:` or `perf(` — Performance improvement. Almost always Scout Spirit.
 - `style:` or `style(` — Code style / formatting. Likely Scout Spirit.
-- `chore:` or `chore(` — Maintenance work. Often Scout Spirit.
+- `chore:` or `chore(` — Maintenance work. Sometimes Scout Spirit, but `chore:` is frequently used for incremental feature work (adding translations, updating configs, wiring up feature flags). **Always verify the diff carefully** — if the chore is in service of a feature under active development, it is NOT Scout Spirit.
 - `build:` or `build(` — Build tooling changes. Often Scout Spirit.
 - `ci:` or `ci(` — CI/CD improvements. Often Scout Spirit.
 
@@ -358,8 +358,9 @@ The following are explicitly **NOT Scout Spirit**, regardless of how they appear
 6. **Security changes** — Auth, permissions, encryption modifications are critical changes, not cleanup
 7. **API contract changes** — Modifying request/response shapes for existing endpoints
 8. **Configuration changes that affect runtime behavior** — Changing environment variables, feature flags, or settings
-9. **Adding new feature flags or experiment gates** — Introducing new feature flags, feature gates (e.g., Statsig gates, LaunchDarkly flags), A/B experiment configurations, or gradual rollout controls. This is feature development work (gating a new or existing feature behind a flag), NOT cleanup. Even if the diff looks small (e.g., adding a single gate check or a new flag constant), it represents deliberate product/feature work. Note: *removing* unused/stale feature flags IS Scout Spirit (see Category 5), but *adding* new ones is not.
-10. **Mixed PRs** — If a PR contains BOTH Scout Spirit work AND new features/bug fixes, the entire PR is NOT Scout Spirit. The developer should have split it into separate PRs.
+9. **Adding or modifying feature flags or experiment gates** — Introducing new feature flags, feature gates (e.g., Statsig gates, LaunchDarkly flags), A/B experiment configurations, or gradual rollout controls, OR modifying/renaming existing ones to align with ongoing feature work. This is feature development work, NOT cleanup. Even if the diff looks small (e.g., changing a gate name, adding a single gate check), it represents deliberate product/feature work. Note: *removing* unused/stale feature flags IS Scout Spirit (see Category 5), but *adding or updating* active ones is not.
+10. **Incremental work on features behind a feature flag** — If the code being changed is part of a feature that is gated behind a feature flag or experiment gate, it is feature development — NOT Scout Spirit. This applies regardless of how small or "cleanup-like" the diff looks. Examples: adding i18n keys for a flagged feature, removing `defaultValue` fallbacks because translations were just published for a flagged feature, adjusting configuration or wiring for a feature behind a gate. The key test is simple: **is the touched code behind a feature flag?** If yes, it's feature work. How to detect this: check the diff and PR context for references to feature gates/flags (e.g., Statsig gates, LaunchDarkly flags, custom feature flag checks), or if the PR title/description mentions a feature that is known to be gated.
+11. **Mixed PRs** — If a PR contains BOTH Scout Spirit work AND new features/bug fixes, the entire PR is NOT Scout Spirit. The developer should have split it into separate PRs.
 
 ---
 
@@ -378,7 +379,8 @@ Follow this process strictly:
    - Any bug being fixed?
    - Any new files that represent new features?
    - Any new dependencies?
-   - Any new feature flags, feature gates (e.g., Statsig gates), or experiment configurations being added?
+   - Any new feature flags, feature gates (e.g., Statsig gates), or experiment configurations being added or modified?
+   - Is the touched code behind a feature flag or experiment gate? If yes, it's feature work, not Scout Spirit.
    - Mixed intent (cleanup + feature in same PR)?
 5. **Determine the category** (or categories, max 3)
 6. **Assess confidence** based on clarity of the changes
@@ -484,14 +486,26 @@ You MUST respond with a JSON object in exactly this format:
 }
 ```
 
-**Not Eligible — New Feature Flag / Gate:**
+**Not Eligible — Feature Flag / Gate Change:**
 
 ```json
 {
   "eligible": false,
   "category": "none",
   "confidence": 95,
-  "reasoning": "This PR adds a new Statsig feature gate 'enable_new_dashboard' and wraps the dashboard component with the gate check. Adding new feature flags or experiment gates is feature development work, not an incremental improvement to existing code.",
-  "flags": ["new feature gate"]
+  "reasoning": "This PR updates a Statsig gate name from 'enable_old_name' to 'enable_new_name' to align with evolving feature requirements. Although the diff is small, this is part of actively developing the feature, not cleaning up legacy code.",
+  "flags": ["feature gate modification", "active feature development"]
+}
+```
+
+**Not Eligible — Code Behind a Feature Flag:**
+
+```json
+{
+  "eligible": false,
+  "category": "none",
+  "confidence": 90,
+  "reasoning": "This PR removes defaultValue fallbacks from i18n t() calls for the AI conversation feature. While removing fallbacks looks like cleanup, the code being changed is part of a feature gated behind a Statsig gate. Any work on code behind a feature flag is feature development, not Scout Spirit.",
+  "flags": ["code behind feature flag"]
 }
 ```
