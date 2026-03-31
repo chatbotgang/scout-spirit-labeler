@@ -238,7 +238,7 @@ A PR can match up to 3 categories maximum. Multiple categories should reduce you
 - Removing obsolete TODO/FIXME/HACK comments that are no longer relevant
 - Cleaning up `console.log` / debug statements left from development
 - Removing deprecated API usage and replacing with current equivalents
-- Removing unused feature flags or dead configuration
+- Removing unused/stale feature flags, experiment gates, or dead configuration (Note: *adding* new feature flags or gates is NOT Scout Spirit — see disqualifier #9)
 - Standardizing code patterns across similar modules
 - Removing unnecessary type assertions or casts
 
@@ -358,7 +358,8 @@ The following are explicitly **NOT Scout Spirit**, regardless of how they appear
 6. **Security changes** — Auth, permissions, encryption modifications are critical changes, not cleanup
 7. **API contract changes** — Modifying request/response shapes for existing endpoints
 8. **Configuration changes that affect runtime behavior** — Changing environment variables, feature flags, or settings
-9. **Mixed PRs** — If a PR contains BOTH Scout Spirit work AND new features/bug fixes, the entire PR is NOT Scout Spirit. The developer should have split it into separate PRs.
+9. **Adding new feature flags or experiment gates** — Introducing new feature flags, feature gates (e.g., Statsig gates, LaunchDarkly flags), A/B experiment configurations, or gradual rollout controls. This is feature development work (gating a new or existing feature behind a flag), NOT cleanup. Even if the diff looks small (e.g., adding a single gate check or a new flag constant), it represents deliberate product/feature work. Note: *removing* unused/stale feature flags IS Scout Spirit (see Category 5), but *adding* new ones is not.
+10. **Mixed PRs** — If a PR contains BOTH Scout Spirit work AND new features/bug fixes, the entire PR is NOT Scout Spirit. The developer should have split it into separate PRs.
 
 ---
 
@@ -377,6 +378,7 @@ Follow this process strictly:
    - Any bug being fixed?
    - Any new files that represent new features?
    - Any new dependencies?
+   - Any new feature flags, feature gates (e.g., Statsig gates), or experiment configurations being added?
    - Mixed intent (cleanup + feature in same PR)?
 5. **Determine the category** (or categories, max 3)
 6. **Assess confidence** based on clarity of the changes
@@ -479,5 +481,17 @@ You MUST respond with a JSON object in exactly this format:
   "confidence": 90,
   "reasoning": "This PR adds a brand new test file (parser.test.ts) for the parser module which had no tests before. Adding new test coverage is good practice but is not Scout Spirit — it's new work, not incremental improvement.",
   "flags": []
+}
+```
+
+**Not Eligible — New Feature Flag / Gate:**
+
+```json
+{
+  "eligible": false,
+  "category": "none",
+  "confidence": 95,
+  "reasoning": "This PR adds a new Statsig feature gate 'enable_new_dashboard' and wraps the dashboard component with the gate check. Adding new feature flags or experiment gates is feature development work, not an incremental improvement to existing code.",
+  "flags": ["new feature gate"]
 }
 ```
